@@ -1,3 +1,6 @@
 driver.o
 eratosthenes
 eratosthenes.o
+driver-debug.o
+eratosthenes-debug
+eratosthenes-debug.o
