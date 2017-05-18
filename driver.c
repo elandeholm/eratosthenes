@@ -143,7 +143,7 @@ static int parse_args(int argc, char * const argv[], driver_args_t *da)
 	}
 
 	if(optind < argc)
-    {
+	{
 		char *endp;
 		da->n = strtoll(argv[optind], &endp, 10);
 		if(*endp != '\0')
