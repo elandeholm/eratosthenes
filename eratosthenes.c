@@ -3,17 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define BITSTYPE uint64_t
-
-#define BITSTYPE_SIZE sizeof(BITSTYPE)
-#define BITSTYPE_BITS (8 * BITSTYPE_SIZE)
-#define BITSTYPE_MASK (BITSTYPE_BITS - 1)
-
-#define BITVAL(n) ((BITSTYPE)1) << ((n) & BITSTYPE_MASK)
-#define SIEVE_PTR(sieve, n) *((sieve) + (n) / BITSTYPE_BITS)
-
-#define MARK_COMPOSITE(sieve, n) (SIEVE_PTR(sieve, n) |= BITVAL(n))
-#define TEST_COMPOSITE(sieve, n) (SIEVE_PTR(sieve, n) &  BITVAL(n))
+#include "eratosthenes.h"
 
 static uint64_t next_prime(BITSTYPE *sieve, uint64_t prev, uint64_t sqrtn)
 {
@@ -31,14 +21,16 @@ static uint64_t next_prime(BITSTYPE *sieve, uint64_t prev, uint64_t sqrtn)
 BITSTYPE *eratosthenes(uint64_t n)
 {
 	BITSTYPE *sieve;
-	uint64_t sqrtn, e, p, pp, i;
+	uint64_t sqrtn, p, pp, i;
+	size_t nmemb;
 
 	if(n < 3)
 	{
 		return NULL;
 	}
 
-	sieve = calloc(n / BITSTYPE_SIZE, sizeof(BITSTYPE));
+	nmemb = 1 + (n >> 1) / BITSTYPE_SIZE;
+	sieve = calloc(nmemb, sizeof(BITSTYPE));
 
 	if(!sieve)
 	{
@@ -47,13 +39,7 @@ BITSTYPE *eratosthenes(uint64_t n)
 
 	sqrtn = (uint64_t)sqrt((double)n);
 
-	MARK_COMPOSITE(sieve, 0);
 	MARK_COMPOSITE(sieve, 1);
-
-	for(e = 4; e < n; e += 2)
-	{
-		MARK_COMPOSITE(sieve, e);
-	}
 
 	p = 3;
 	while(p <= sqrtn)
