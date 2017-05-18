@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <errno.h>
 
 #include "eratosthenes.h"
 
@@ -20,7 +21,7 @@ static int isprime_trial_div(uint64_t i)
 	{
 		if(i % 2) // assumed common case
 		{
-			sqrti = (uint64_t)sqrt((double)i);
+			sqrti = int_sqrt(i);
 
 			j = 3;
 			while(j <= sqrti)
@@ -248,7 +249,80 @@ static void kth_prime(BITSTYPE *sieve, uint64_t n, int64_t k)
 	}
 	else
 	{
-		printf("%" PRIu64 ": %" PRIu64 "\n", j, i);
+		printf("#%" PRIu64 ": %" PRIu64 "\n", j, i);
+	}
+}
+
+static void reduce(int64_t *i, uint64_t j)
+{
+	do
+	{
+		*i /= j;
+		printf(" %" PRIu64, j);
+	}
+	while(!(*i % j));
+}
+
+static void factor(BITSTYPE *sieve, uint64_t n, int64_t i)
+{
+	uint64_t sqrti, j;
+
+	if(i < 4)
+	{
+		if(i < 0)
+		{
+			fprintf(stderr, "out of range: %" PRId64 "\n", i);
+		}
+		else
+		{
+			printf("/%" PRIu64 ": %" PRIu64 "\n", i, i);
+		}
+	}
+	else
+	{
+		printf("/%" PRIu64 ":", i);
+
+		sqrti = int_sqrt(i);
+
+		if(!(i % 2))
+		{
+			reduce(&i, 2);
+			sqrti = int_sqrt(i);
+		}
+		j = 3;
+
+		while(i > 1 && j <= sqrti && j < n)
+		{
+			if(!(i % j))
+			{
+				reduce(&i, j);
+				sqrti = int_sqrt(i);
+			}
+			j = next_prime(sieve, j, sqrti);
+		}
+
+		if(i > 1)
+		{
+			if(i < n)
+			{
+				if(!TEST_COMPOSITE(sieve, i))
+				{
+					printf(" %" PRIu64, i);
+				}
+			}
+			else
+			{
+				if((i / n) > n)
+				{
+					printf(" [%" PRIu64 "]", i);
+				}
+				else
+				{
+					printf(" %" PRIu64, i);
+				}
+			}
+		}
+		puts("");
 	}
 }
 
@@ -256,7 +330,7 @@ static void interactive(BITSTYPE *sieve, uint64_t n)
 {
 	int quit = 0, line_done;
 	char *rl_buffer;
-	char *line;
+	char *line, *start;
 	int64_t i, k;
 
 	rl_bind_key('\t', rl_abort); // disable auto-complete
@@ -271,22 +345,44 @@ static void interactive(BITSTYPE *sieve, uint64_t n)
 
 			do
 			{
+				start = line;
+
 				if(isdigit(*line))
 				{
 					i = strtoll(line, &line, 10);
-					test_primality(sieve, n, i);
+					if(errno != ERANGE)
+					{
+						test_primality(sieve, n, i);
+					}
 				}
 				else if(*line == '#' && isdigit(line[1]))
 				{
 					k = strtoll(line+1, &line, 10);
-					kth_prime(sieve, n, k);
+					if(errno != ERANGE)
+					{
+						kth_prime(sieve, n, k);
+					}
+				}
+				else if(*line == '/' && isdigit(line[1]))
+				{
+					i = strtoll(line+1, &line, 10);
+					if(errno != ERANGE)
+					{
+						factor(sieve, n, i);
+					}
 				}
 				else
 				{
 					if(*line)
 					{
-						fprintf(stderr, "*** syntax error '%s'\n", line);
+						fprintf(stderr, "*** syntax error '%s'\n", start);
 					}
+					line_done = 1;
+				}
+
+				if(errno == ERANGE)
+				{
+					fprintf(stderr, "*** number out of range '%s'\n", start);
 					line_done = 1;
 				}
 
