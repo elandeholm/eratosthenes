@@ -184,13 +184,13 @@ static const char *eat_white(const char *buffer)
 
 static void interactive(BITSTYPE *sieve, uint64_t n, int time)
 {
-	int quit = 0;
+	int quit = 0, is_prime;
 	char *rl;
 	char const *line;
 	char *endp;
 	int64_t i;
 
-	rl_bind_key('\t',rl_abort);//disable auto-complete
+	rl_bind_key('\t', rl_abort); // disable auto-complete
 
 	while(!quit)
 	{
@@ -207,14 +207,16 @@ static void interactive(BITSTYPE *sieve, uint64_t n, int time)
 				{
 					if(i < n)
 					{
-						if(TEST_COMPOSITE(sieve, i))
+						if(i % 2)
 						{
-							puts("composite");
+							is_prime = !TEST_COMPOSITE(sieve, i);
 						}
 						else
 						{
-							puts("prime");						
+							is_prime = i == 2;
 						}
+
+						puts(is_prime ? "prime" : "composite");
 					}
 					else
 					{
