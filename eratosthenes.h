@@ -10,4 +10,6 @@
 #define MARK_COMPOSITE(sieve, n) (SIEVE_PTR(sieve, n) |= BITVAL(n))
 #define TEST_COMPOSITE(sieve, n) (SIEVE_PTR(sieve, n) &  BITVAL(n))
 
+uint64_t int_sqrt(uint64_t x);
+uint64_t next_prime(BITSTYPE *sieve, uint64_t prev, uint64_t sqrtn);
 BITSTYPE *eratosthenes(uint64_t n);

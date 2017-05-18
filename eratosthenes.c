@@ -5,7 +5,12 @@
 
 #include "eratosthenes.h"
 
-static uint64_t next_prime(BITSTYPE *sieve, uint64_t prev, uint64_t sqrtn)
+uint64_t int_sqrt(uint64_t x)
+{
+	return (uint64_t)sqrt((double)x);
+}
+
+uint64_t next_prime(BITSTYPE *sieve, uint64_t prev, uint64_t sqrtn)
 {
 	uint64_t i;
 
@@ -37,7 +42,7 @@ BITSTYPE *eratosthenes(uint64_t n)
 		return NULL;
 	}
 
-	sqrtn = (uint64_t)sqrt((double)n);
+	sqrtn = int_sqrt(n);
 
 	MARK_COMPOSITE(sieve, 1);
 
