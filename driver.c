@@ -167,7 +167,7 @@ static int parse_args(int argc, char * const argv[], driver_args_t *da)
 	return fail;
 }
 
-static const char *eat_white(const char *buffer)
+static char *eat_white(char *buffer)
 {
 	int i = 0;
 	char c;
@@ -182,110 +182,121 @@ static const char *eat_white(const char *buffer)
 	return buffer + i - 1;
 }
 
-static void interactive(BITSTYPE *sieve, uint64_t n, int time)
+static void test_primality(BITSTYPE *sieve, uint64_t n, int64_t i)
 {
-	int quit = 0, is_prime;
-	char *rl;
-	char const *line;
-	char *endp;
-	int64_t i, j;
+	int is_prime;
+
+	if(i >= 0 && i < n)
+	{
+		if(i % 2)
+		{
+			is_prime = !TEST_COMPOSITE(sieve, i);
+		}
+		else
+		{
+			is_prime = i == 2;
+		}
+
+		printf("%" PRId64 ": ", i);
+		puts(is_prime ? "prime" : "composite");
+	}
+	else
+	{
+		fprintf(stderr, "out of range: %" PRId64 "\n", i);
+	}
+}
+
+static void kth_prime(BITSTYPE *sieve, uint64_t n, int64_t k)
+{
+	int oor = 0;
+	uint64_t i, j;
+
+	j = 2;
+	i = 3;
+
+	if(k > 1)
+	{
+		while(j < k && !oor)
+		{
+			i += 2;
+			if(i < n)
+			{
+				if(!TEST_COMPOSITE(sieve, i))
+				{
+					++j;
+				}
+			}
+			else
+			{
+				oor = 1;
+			}
+		}
+	}
+	else if(k == 1)
+	{
+		j = 1;
+		i = 2;
+	}
+	else
+	{
+		oor = 1;							
+	}
+
+	if(oor)
+	{
+		fprintf(stderr, "out of range: %" PRId64 "\n", k);
+	}
+	else
+	{
+		printf("%" PRIu64 ": %" PRIu64 "\n", j, i);
+	}
+}
+
+static void interactive(BITSTYPE *sieve, uint64_t n)
+{
+	int quit = 0, line_done;
+	char *rl_buffer;
+	char *line;
+	int64_t i, k;
 
 	rl_bind_key('\t', rl_abort); // disable auto-complete
 
 	while(!quit)
 	{
-		if((rl = readline("> ")))
+		if((rl_buffer = readline("> ")))
 		{
-			line = eat_white(rl);
+			add_history(rl_buffer);
+			line = eat_white(rl_buffer);
+			line_done = 0;
 
-			if(*line != '\0')
+			do
 			{
-				add_history(line);
-
-				if(*line == '#')
+				if(isdigit(*line))
 				{
-					// find k:th prime
-
-					uint64_t k;
-					int oor = 0;
-
-					k = strtoll(line + 1, &endp, 10);
-					if(*endp == '\0')
-					{
-						j = 2;
-						i = 3;
-
-						if(k > 1)
-						{
-							while(j < k && !oor)
-							{
-								i += 2;
-								if(i < n)
-								{
-									if(!TEST_COMPOSITE(sieve, i))
-									{
-										++j;
-									}
-								}
-								else
-								{
-									oor = 1;
-								}
-							}
-						}
-						else if(k == 1)
-						{
-							j = 1;
-							i = 2;
-						}
-						else
-						{
-							oor = 1;							
-						}
-
-						if(oor)
-						{
-							fprintf(stderr, "out of range: %s\n", line);
-						}
-						else
-						{
-							printf("%" PRIu64 ": %" PRIu64 "\n", j, i);
-						}
-					}
+					i = strtoll(line, &line, 10);
+					test_primality(sieve, n, i);
+				}
+				else if(*line == '#' && isdigit(line[1]))
+				{
+					k = strtoll(line+1, &line, 10);
+					kth_prime(sieve, n, k);
 				}
 				else
 				{
-					// test primality
-
-					i = strtoll(line, &endp, 10);
-					if(*endp == '\0')
+					if(*line)
 					{
-						if(i < n)
-						{
-							if(i % 2)
-							{
-								is_prime = !TEST_COMPOSITE(sieve, i);
-							}
-							else
-							{
-								is_prime = i == 2;
-							}
-
-							puts(is_prime ? "prime" : "composite");
-						}
-						else
-						{
-							fprintf(stderr, "out of range: %s\n", line);
-						}
+						fprintf(stderr, "*** syntax error '%s'\n", line);
 					}
-					else
-					{
-						fprintf(stderr, "invalid number: %s\n", line);
-					}
+					line_done = 1;
 				}
-			}
 
-			free(rl);
+				if(!line_done)
+				{
+					line = eat_white(line);
+				}
+			} while(!line_done);
+
+			free(rl_buffer);
 		}
 		else
 		{
@@ -425,7 +436,7 @@ int main(int argc, char * const argv[])
 
 			if(da.interactive)
 			{
-				interactive(sieve, da.n, da.time);
+				interactive(sieve, da.n);
 			}
 
 			free(sieve);
