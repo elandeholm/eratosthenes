@@ -188,7 +188,7 @@ static void interactive(BITSTYPE *sieve, uint64_t n, int time)
 	char *rl;
 	char const *line;
 	char *endp;
-	int64_t i;
+	int64_t i, j;
 
 	rl_bind_key('\t', rl_abort); // disable auto-complete
 
@@ -202,30 +202,86 @@ static void interactive(BITSTYPE *sieve, uint64_t n, int time)
 			{
 				add_history(line);
 
-				i = strtoll(line, &endp, 10);
-				if(*endp == '\0')
+				if(*line == '#')
 				{
-					if(i < n)
+					// find k:th prime
+
+					uint64_t k;
+					int oor = 0;
+
+					k = strtoll(line + 1, &endp, 10);
+					if(*endp == '\0')
 					{
-						if(i % 2)
+						j = 2;
+						i = 3;
+
+						if(k > 1)
 						{
-							is_prime = !TEST_COMPOSITE(sieve, i);
+							while(j < k && !oor)
+							{
+								i += 2;
+								if(i < n)
+								{
+									if(!TEST_COMPOSITE(sieve, i))
+									{
+										++j;
+									}
+								}
+								else
+								{
+									oor = 1;
+								}
+							}
+						}
+						else if(k == 1)
+						{
+							j = 1;
+							i = 2;
 						}
 						else
 						{
-							is_prime = i == 2;
+							oor = 1;							
 						}
 
-						puts(is_prime ? "prime" : "composite");
-					}
-					else
-					{
-						fprintf(stderr, "out of range: %s\n", line);
+						if(oor)
+						{
+							fprintf(stderr, "out of range: %s\n", line);
+						}
+						else
+						{
+							printf("%" PRIu64 ": %" PRIu64 "\n", j, i);
+						}
 					}
 				}
 				else
 				{
-					fprintf(stderr, "invalid number: %s\n", line);
+					// test primality
+
+					i = strtoll(line, &endp, 10);
+					if(*endp == '\0')
+					{
+						if(i < n)
+						{
+							if(i % 2)
+							{
+								is_prime = !TEST_COMPOSITE(sieve, i);
+							}
+							else
+							{
+								is_prime = i == 2;
+							}
+
+							puts(is_prime ? "prime" : "composite");
+						}
+						else
+						{
+							fprintf(stderr, "out of range: %s\n", line);
+						}
+					}
+					else
+					{
+						fprintf(stderr, "invalid number: %s\n", line);
+					}
 				}
 			}
 
