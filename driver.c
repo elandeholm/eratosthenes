@@ -409,17 +409,14 @@ static void list(BITSTYPE *sieve, uint64_t n, int time)
 
 	start = clock();
 
-	j = 1;
-	i = 2;
-
-	printf("%" PRIu64 ": %" PRIu64 "\n", j, i);
+	printf("2\n");
 
 	for(i = 3, j = 1; i < n; i += 2)
 	{
 		if(!TEST_COMPOSITE(sieve, i))
 		{
 			++j;
-			printf("%" PRIu64 ": %" PRIu64 "\n", j, i);
+			printf("%" PRIu64 "\n", i);
 		}
 	}
 
